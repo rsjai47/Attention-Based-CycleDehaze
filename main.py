@@ -27,11 +27,23 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 def lr_schedule_cosdecay(t, T=opt.steps, init_lr=opt.lr):
-    lr = 0.5*(1+math.cos(t*math.pi/T))*init_lr
+    lr = 0.5 * (1 + math.cos(t * math.pi / T)) * init_lr
     return lr
 
 
-def train_fn(disc_C, disc_H, gen_H, gen_C, train_loader, test_loader, opt_disc, opt_gen, l1, mse, just_eval=False):
+def train_fn(
+    disc_C,
+    disc_H,
+    gen_H,
+    gen_C,
+    train_loader,
+    test_loader,
+    opt_disc,
+    opt_gen,
+    l1,
+    mse,
+    just_eval=False,
+):
     losses = []
     start_step = 0
     max_ssim = 0
@@ -40,41 +52,44 @@ def train_fn(disc_C, disc_H, gen_H, gen_C, train_loader, test_loader, opt_disc, 
     psnrs = []
     g_scaler = GradScaler()
     d_scaler = GradScaler()
-    writer = SummaryWriter(f'/runs')
+    writer = SummaryWriter(f"/runs")
     if opt.load_model:
         print("Loading checkpoint ---")
-        checkpoint = torch.load(
-            opt.checkpoint_model, map_location=opt.device)
+        checkpoint = torch.load(opt.checkpoint_model, map_location=opt.device)
         gen_C.load_state_dict(checkpoint["gen_C"])
         gen_H.load_state_dict(checkpoint["gen_H"])
         disc_C.load_state_dict(checkpoint["disc_C"])
         disc_H.load_state_dict(checkpoint["disc_H"])
         opt_gen.load_state_dict(checkpoint["opt_gen"])
         opt_disc.load_state_dict(checkpoint["opt_disc"])
-        start_step = checkpoint['start_step']
-        max_ssim = checkpoint['max_ssim']
-        max_psnr = checkpoint['max_psnr']
-        psnrs = checkpoint['psnrs']
-        ssims = checkpoint['ssims']
+        start_step = checkpoint["start_step"]
+        max_ssim = checkpoint["max_ssim"]
+        max_psnr = checkpoint["max_psnr"]
+        psnrs = checkpoint["psnrs"]
+        ssims = checkpoint["ssims"]
 
-    if(just_eval):
-        print(f'Just Eval ---')
-        eval_loader = DataLoader(dataset=Eval_Dataset(
-            'inputs', train=False, size='whole img'), batch_size=1, shuffle=False, pin_memory=True)
+    if just_eval:
+        print(f"Just Eval ---")
+        eval_loader = DataLoader(
+            dataset=Eval_Dataset("inputs", train=False, size="whole img"),
+            batch_size=1,
+            shuffle=False,
+            pin_memory=True,
+        )
         Eval(gen_C, eval_loader)
         return
 
-    if(opt.load_model):
+    if opt.load_model:
 
-        print(f'Starting training at {start_step} ---')
+        print(f"Starting training at {start_step} ---")
 
     else:
-        print('Train from scratch ---')
+        print("Train from scratch ---")
 
     C_reals = 0
     C_fakes = 0
     train_iterator = iter(train_loader)
-    loop = tqdm(range(start_step+1, opt.steps), leave=True)
+    loop = tqdm(range(start_step + 1, opt.steps), leave=True)
     for idx in loop:
 
         lr = lr_schedule_cosdecay(idx)
@@ -102,7 +117,7 @@ def train_fn(disc_C, disc_H, gen_H, gen_C, train_loader, test_loader, opt_disc, 
         D_H_fake_loss = mse(D_H_fake, torch.zeros_like(D_H_fake))
         D_H_loss = D_H_real_loss + D_H_fake_loss
 
-        D_loss = (D_H_loss + D_C_loss)/2
+        D_loss = (D_H_loss + D_C_loss) / 2
 
         opt_disc.zero_grad()
         D_loss.backward()
@@ -140,35 +155,36 @@ def train_fn(disc_C, disc_H, gen_H, gen_C, train_loader, test_loader, opt_disc, 
         G_loss.backward()
         opt_gen.step()
         losses.append(G_loss.item())
-        writer.add_scalar('data/loss_G', G_loss, idx)
-        writer.add_scalar('data/loss_Gen_C', loss_G_C, idx)
-        writer.add_scalar('data/loss_cycle_clean', cycle_clean_loss, idx)
-        writer.add_scalar('data/loss_clean_identity', identity_clean_loss, idx)
-        writer.add_scalar('data/loss_Disc', D_loss, idx)
+        writer.add_scalar("data/loss_G", G_loss, idx)
+        writer.add_scalar("data/loss_Gen_C", loss_G_C, idx)
+        writer.add_scalar("data/loss_cycle_clean", cycle_clean_loss, idx)
+        writer.add_scalar("data/loss_clean_identity", identity_clean_loss, idx)
+        writer.add_scalar("data/loss_Disc", D_loss, idx)
 
         if idx % opt.eval_step == 0:
 
-            unorm = UnNormalize(mean=(0.5, 0.5, 0.5),
-                                std=(0.5, 0.5, 0.5))
+            unorm = UnNormalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
 
-            img_grid = vutils.make_grid([torch.squeeze(unorm(haze.detach()).cpu()[0]), torch.squeeze(
-                unorm(fake_clean.detach()).cpu()[0]), torch.squeeze(unorm(clean.detach()).cpu()[0]), torch.squeeze(unorm(fake_haze.detach()).cpu()[0])])
+            img_grid = vutils.make_grid(
+                [
+                    torch.squeeze(unorm(haze.detach()).cpu()[0]),
+                    torch.squeeze(unorm(fake_clean.detach()).cpu()[0]),
+                    torch.squeeze(unorm(clean.detach()).cpu()[0]),
+                    torch.squeeze(unorm(fake_haze.detach()).cpu()[0]),
+                ]
+            )
             save_image(img_grid, f"saved_images/img_{idx}.png")
 
-        if idx % (10*opt.eval_step) == 0 and idx != 0:
+        if idx % (10 * opt.eval_step) == 0 and idx != 0:
             with torch.no_grad():
-                ssim_eval, psnr_eval = test(
-                    gen_C, test_loader, max_psnr, max_ssim, idx)
-            print(
-                f'\n iter :{idx} |ssim:{ssim_eval:.4f}| psnr:{psnr_eval:.4f}')
+                ssim_eval, psnr_eval = test(gen_C, test_loader, max_psnr, max_ssim, idx)
+            print(f"\n iter :{idx} |ssim:{ssim_eval:.4f}| psnr:{psnr_eval:.4f}")
 
-            writer.add_scalar('data/ssim', ssim_eval, idx)
-            writer.add_scalar('data/psnr', psnr_eval, idx)
-            writer.add_scalars('group', {
-                'ssim': ssim_eval,
-                'psnr': psnr_eval,
-                'loss': G_loss
-            }, idx)
+            writer.add_scalar("data/ssim", ssim_eval, idx)
+            writer.add_scalar("data/psnr", psnr_eval, idx)
+            writer.add_scalars(
+                "group", {"ssim": ssim_eval, "psnr": psnr_eval, "loss": G_loss}, idx
+            )
 
             ssims.append(ssim_eval)
             psnrs.append(psnr_eval)
@@ -177,18 +193,54 @@ def train_fn(disc_C, disc_H, gen_H, gen_C, train_loader, test_loader, opt_disc, 
                 print("sim eval")
                 max_ssim = max(max_ssim, ssim_eval)
                 max_psnr = max(max_psnr, psnr_eval)
-                save_checkpoint(gen_C, gen_H, disc_C, disc_H, opt_gen, opt_disc, idx,
-                                max_ssim, max_psnr, ssims, psnrs, filename=opt.checkpoint_model)
+                save_checkpoint(
+                    gen_C,
+                    gen_H,
+                    disc_C,
+                    disc_H,
+                    opt_gen,
+                    opt_disc,
+                    idx,
+                    max_ssim,
+                    max_psnr,
+                    ssims,
+                    psnrs,
+                    filename=opt.checkpoint_model,
+                )
 
                 print(
-                    f'\n model saved at :{idx} | max_psnr:{max_psnr:.4f}|max_ssim:{max_ssim:.4f}')
+                    f"\n model saved at :{idx} | max_psnr:{max_psnr:.4f}|max_ssim:{max_ssim:.4f}"
+                )
 
-        loop.set_postfix(iter=idx, G_loss=G_loss.item(), D_loss=D_loss.item(), cycle_H_loss=cycle_haze_loss.item(), cycle_C_loss=cycle_clean_loss.item(
-        ), G_C_loss=loss_G_C.item(), G_H_loss=loss_G_H.item(), I_H_loss=identity_haze_loss.item(), I_loss=identity_clean_loss.item(), max_ssim=max_ssim, max_psnr=max_psnr)
+        loop.set_postfix(
+            iter=idx,
+            G_loss=G_loss.item(),
+            D_loss=D_loss.item(),
+            cycle_H_loss=cycle_haze_loss.item(),
+            cycle_C_loss=cycle_clean_loss.item(),
+            G_C_loss=loss_G_C.item(),
+            G_H_loss=loss_G_H.item(),
+            I_H_loss=identity_haze_loss.item(),
+            I_loss=identity_clean_loss.item(),
+            max_ssim=max_ssim,
+            max_psnr=max_psnr,
+        )
 
     if opt.save_model:
-        save_checkpoint(gen_C, gen_H, disc_C, disc_H, opt_gen, opt_disc, idx,
-                        max_ssim, max_psnr, ssims, psnrs, filename=opt.checkpoint_model)
+        save_checkpoint(
+            gen_C,
+            gen_H,
+            disc_C,
+            disc_H,
+            opt_gen,
+            opt_disc,
+            idx,
+            max_ssim,
+            max_psnr,
+            ssims,
+            psnrs,
+            filename=opt.checkpoint_model,
+        )
 
 
 def test(gen_C, test_loader, max_psnr, max_ssim, idx):
@@ -203,17 +255,23 @@ def test(gen_C, test_loader, max_psnr, max_ssim, idx):
         targets = targets.to(opt.device)
         pred = gen_C(inputs)
         unorm = UnNormalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
-        ts = vutils.make_grid([torch.squeeze(unorm(inputs.detach()).cpu()[0]), torch.squeeze(
-            unorm(targets.detach()).cpu()[0]), torch.squeeze(unorm(pred.detach()).cpu()[0])])
+        ts = vutils.make_grid(
+            [
+                torch.squeeze(unorm(inputs.detach()).cpu()[0]),
+                torch.squeeze(unorm(targets.detach()).cpu()[0]),
+                torch.squeeze(unorm(pred.detach()).cpu()[0]),
+            ]
+        )
 
-        vutils.save_image(ts, f'test_images/{i}_testimg.png')
+        vutils.save_image(ts, f"test_images/{i}_testimg.png")
         ssim1 = ssim(unorm(pred.detach()), unorm(targets.detach())).item()
         psnr1 = psnr(unorm(pred.detach()), unorm(targets.detach()))
         ssims.append(ssim1)
         psnrs.append(psnr1)
         if (psnr1 > max_psnr or ssim1 > max_ssim) and s:
             vutils.save_image(
-                ts, f'test_images/best_picks/{idx}_ps_{psnr1:.4}_{ssim1:.4}.png')
+                ts, f"test_images/best_picks/{idx}_ps_{psnr1:.4}_{ssim1:.4}.png"
+            )
             s = False
         val_loop.set_postfix(ssim=ssim1, psnr=psnr1)
     return np.mean(ssims), np.mean(psnrs)
@@ -228,8 +286,9 @@ def Eval(gen_C, eval_loader):
         inputs = inputs.to(opt.device)
         pred = gen_C(inputs)
         unorm = UnNormalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
-        vutils.save_image(torch.squeeze(unorm(pred.detach()).cpu()[
-                          0]), f'outputs/{i}_testimg.png')
+        vutils.save_image(
+            torch.squeeze(unorm(pred.detach()).cpu()[0]), f"outputs/{i}_testimg.png"
+        )
 
 
 def main():
@@ -237,7 +296,7 @@ def main():
     disc_H = Discriminator(in_channels=3).to(opt.device)
     gen_H = Generator(img_channels=3).to(opt.device)
     gen_C = Generator(img_channels=3).to(opt.device)
-    if opt.device == 'cuda':
+    if opt.device == "cuda":
         print("Running in CUDA")
         disc_C = torch.nn.DataParallel(disc_C)
         disc_H = torch.nn.DataParallel(disc_H)
@@ -260,17 +319,37 @@ def main():
     L1 = nn.L1Loss()
     mse = nn.MSELoss()
 
-    ITS_train_loader = DataLoader(dataset=RESIDE_Dataset(
-        'data', train=True, size=opt.crop_size), batch_size=opt.bs, shuffle=True, num_workers=1, pin_memory=True)
-    ITS_test_loader = DataLoader(dataset=RESIDE_Dataset(
-        'data/SOTS/indoor', train=False, size='whole img'), batch_size=1, shuffle=False, pin_memory=True)
+    ITS_train_loader = DataLoader(
+        dataset=RESIDE_Dataset("data", train=True, size=opt.crop_size),
+        batch_size=opt.bs,
+        shuffle=True,
+        num_workers=1,
+        pin_memory=True,
+    )
+    ITS_test_loader = DataLoader(
+        dataset=RESIDE_Dataset("data/SOTS/indoor", train=False, size="whole img"),
+        batch_size=1,
+        shuffle=False,
+        pin_memory=True,
+    )
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--eval', action='store_true')
+    parser.add_argument("--eval", action="store_true")
     args = parser.parse_args()
 
-    train_fn(disc_C, disc_H, gen_H, gen_C, ITS_train_loader, ITS_test_loader,
-             opt_disc, opt_gen, L1, mse, just_eval=args.eval)
+    train_fn(
+        disc_C,
+        disc_H,
+        gen_H,
+        gen_C,
+        ITS_train_loader,
+        ITS_test_loader,
+        opt_disc,
+        opt_gen,
+        L1,
+        mse,
+        just_eval=args.eval,
+    )
 
 
 if __name__ == "__main__":

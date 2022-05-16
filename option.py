@@ -8,12 +8,12 @@ import os
 import warnings
 from torch import nn
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 
 class options:
     def __init__(self):
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.load_model = True
         self.save_model = True
         self.steps = 84000
@@ -32,17 +32,17 @@ class options:
 
 opt = options()
 
-if not os.path.exists('trained_models'):
-    os.mkdir('trained_models')
-if not os.path.exists('saved_images'):
-    os.mkdir('saved_images')
-if not os.path.exists('test_images'):
-    os.mkdir('test_images')
-if not os.path.exists('test_images/best_picks'):
-    os.mkdir('test_images/best_picks')
-if not os.path.exists('runs'):
-    os.makedirs('runs', exist_ok=True)
-if not os.path.exists('inputs'):
-    os.makedirs('inputs', exist_ok=True)
-if not os.path.exists('outputs'):
-    os.makedirs('outputs', exist_ok=True)
+if not os.path.exists("trained_models"):
+    os.mkdir("trained_models")
+if not os.path.exists("saved_images"):
+    os.mkdir("saved_images")
+if not os.path.exists("test_images"):
+    os.mkdir("test_images")
+if not os.path.exists("test_images/best_picks"):
+    os.mkdir("test_images/best_picks")
+if not os.path.exists("runs"):
+    os.makedirs("runs", exist_ok=True)
+if not os.path.exists("inputs"):
+    os.makedirs("inputs", exist_ok=True)
+if not os.path.exists("outputs"):
+    os.makedirs("outputs", exist_ok=True)

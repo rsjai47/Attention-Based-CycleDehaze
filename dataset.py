@@ -12,8 +12,8 @@ from matplotlib import pyplot as plt
 from torchvision.utils import make_grid
 from tqdm import tqdm
 
-sys.path.append('.')
-sys.path.append('..')
+sys.path.append(".")
+sys.path.append("..")
 
 BS = opt.bs
 print(f"batch_size :{BS}")
@@ -43,25 +43,24 @@ def tensorShow(tensor, titles=None):
 
 
 class RESIDE_Dataset(data.Dataset):
-    def __init__(self, path, train, size=crop_size, format='.png'):
+    def __init__(self, path, train, size=crop_size, format=".png"):
         super(RESIDE_Dataset, self).__init__()
-        print('loading dataset')
+        print("loading dataset")
         self.size = size
-        print('crop size', size)
+        print("crop size", size)
         self.train = train
         self.format = format
-        self.haze_imgs_dir = os.listdir(os.path.join(path, 'hazy'))
-        self.haze_imgs = [os.path.join(path, 'hazy', img)
-                          for img in self.haze_imgs_dir]
-        self.clear_dir = os.path.join(path, 'clear')
+        self.haze_imgs_dir = os.listdir(os.path.join(path, "hazy"))
+        self.haze_imgs = [os.path.join(path, "hazy", img) for img in self.haze_imgs_dir]
+        self.clear_dir = os.path.join(path, "clear")
         self.transforms = self.get_transforms()
         self.transformstest = self.get_transforms_test()
 
     def __getitem__(self, index):
         haze = Image.open(self.haze_imgs[index])
         img = self.haze_imgs[index]
-        id = img.split('\\')[-1].split('_')[0]
-        clear_name = id+self.format
+        id = img.split("\\")[-1].split("_")[0]
+        clear_name = id + self.format
         clear = Image.open(os.path.join(self.clear_dir, clear_name))
         if self.train:
             hazeimage = self.transforms(haze.convert("RGB"))
@@ -75,8 +74,9 @@ class RESIDE_Dataset(data.Dataset):
     def get_transforms(self, resize_to=350, interpolation=Image.BICUBIC):
         all_transforms = []
         crop_s = opt.crop_size
-        all_transforms.append(tfs.Resize(
-            size=(resize_to, resize_to), interpolation=interpolation))
+        all_transforms.append(
+            tfs.Resize(size=(resize_to, resize_to), interpolation=interpolation)
+        )
         all_transforms.append(tfs.RandomCrop(crop_s))
         all_transforms.append(tfs.ToTensor())
         all_transforms.append(tfs.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)))
@@ -96,16 +96,15 @@ class RESIDE_Dataset(data.Dataset):
 
 
 class Eval_Dataset(data.Dataset):
-    def __init__(self, path, train, size=crop_size, format='.png'):
+    def __init__(self, path, train, size=crop_size, format=".png"):
 
         super(Eval_Dataset, self).__init__()
         self.size = size
-        print('crop size', size)
+        print("crop size", size)
         self.train = train
         self.format = format
         self.haze_imgs_dir = os.listdir(path)
-        self.haze_imgs = [os.path.join(path, img)
-                          for img in self.haze_imgs_dir]
+        self.haze_imgs = [os.path.join(path, img) for img in self.haze_imgs_dir]
         self.transforms = self.get_transforms()
         self.transformstest = self.get_transforms_test()
 
@@ -119,8 +118,9 @@ class Eval_Dataset(data.Dataset):
     def get_transforms(self, resize_to=350, interpolation=Image.BICUBIC):
         all_transforms = []
         crop_s = opt.crop_size
-        all_transforms.append(tfs.Resize(
-            size=(resize_to, resize_to), interpolation=interpolation))
+        all_transforms.append(
+            tfs.Resize(size=(resize_to, resize_to), interpolation=interpolation)
+        )
         all_transforms.append(tfs.RandomCrop(crop_s))
         all_transforms.append(tfs.ToTensor())
         all_transforms.append(tfs.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)))

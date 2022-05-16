@@ -5,7 +5,20 @@ import numpy as np
 from option import opt
 
 
-def save_checkpoint(gen_C, gen_H, disc_C, disc_H, opt_gen, opt_disc, start_step, max_ssim, max_psnr, ssims, psnrs, filename=opt.checkpoint_model):
+def save_checkpoint(
+    gen_C,
+    gen_H,
+    disc_C,
+    disc_H,
+    opt_gen,
+    opt_disc,
+    start_step,
+    max_ssim,
+    max_psnr,
+    ssims,
+    psnrs,
+    filename=opt.checkpoint_model,
+):
     print("=> Saving checkpoint")
     checkpoint = {
         "gen_C": gen_C.state_dict(),
@@ -18,6 +31,6 @@ def save_checkpoint(gen_C, gen_H, disc_C, disc_H, opt_gen, opt_disc, start_step,
         "max_psnr": max_psnr,
         "max_ssim": max_ssim,
         "ssims": ssims,
-        "psnrs": psnrs
+        "psnrs": psnrs,
     }
     torch.save(checkpoint, filename)

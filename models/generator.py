@@ -15,22 +15,21 @@ class Mix(nn.Module):
 
     def forward(self, fea1, fea2):
         mix_factor = self.mix_block(self.w)
-        out = fea1 * mix_factor.expand_as(fea1) + \
-            fea2 * (1 - mix_factor.expand_as(fea2))
+        out = fea1 * mix_factor.expand_as(fea1) + fea2 * (
+            1 - mix_factor.expand_as(fea2)
+        )
         return out
 
 
 class ConvBlock(nn.Module):
-
     def __init__(self, in_channels, out_channels, down=True, use_act=True, **kwargs):
         super().__init__()
         self.conv = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels,
-                      padding_mode="reflect", **kwargs)
+            nn.Conv2d(in_channels, out_channels, padding_mode="reflect", **kwargs)
             if down
             else nn.ConvTranspose2d(in_channels, out_channels, **kwargs),
             nn.InstanceNorm2d(out_channels),
-            nn.ReLU(inplace=True) if use_act else nn.Identity()
+            nn.ReLU(inplace=True) if use_act else nn.Identity(),
         )
 
     def forward(self, x):
@@ -40,8 +39,18 @@ class ConvBlock(nn.Module):
 class Generator(nn.Module):
     def __init__(self, img_channels=3, out=3):
         super(Generator, self).__init__()
-        self.down1 = nn.Sequential(nn.Conv2d(img_channels, 64, kernel_size=7, stride=1,
-                                   padding=3, padding_mode="reflect"), nn.InstanceNorm2d(64), nn.ReLU(inplace=True))
+        self.down1 = nn.Sequential(
+            nn.Conv2d(
+                img_channels,
+                64,
+                kernel_size=7,
+                stride=1,
+                padding=3,
+                padding_mode="reflect",
+            ),
+            nn.InstanceNorm2d(64),
+            nn.ReLU(inplace=True),
+        )
 
         self.down2 = ConvBlock(64, 128, kernel_size=3, stride=2, padding=1)
 
@@ -49,12 +58,23 @@ class Generator(nn.Module):
 
         self.dehaze_block = DehazeModule()
 
-        self.up1 = ConvBlock(256, 128, down=False, kernel_size=3,
-                             stride=2, padding=1, output_padding=1)
-        self.up2 = ConvBlock(128, 64, down=False, kernel_size=3,
-                             stride=2, padding=1, output_padding=1)
-        self.up3 = nn.Sequential(nn.Conv2d(
-            64, img_channels, kernel_size=7, stride=1, padding=3, padding_mode="reflect"), nn.Tanh())
+        self.up1 = ConvBlock(
+            256, 128, down=False, kernel_size=3, stride=2, padding=1, output_padding=1
+        )
+        self.up2 = ConvBlock(
+            128, 64, down=False, kernel_size=3, stride=2, padding=1, output_padding=1
+        )
+        self.up3 = nn.Sequential(
+            nn.Conv2d(
+                64,
+                img_channels,
+                kernel_size=7,
+                stride=1,
+                padding=3,
+                padding_mode="reflect",
+            ),
+            nn.Tanh(),
+        )
 
         self.mix1 = Mix(m=-1)
         self.mix2 = Mix(m=-0.6)
