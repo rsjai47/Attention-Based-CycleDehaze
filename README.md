@@ -1,8 +1,7 @@
 
 # Attention Based CycleDehaze
 
-A CycleGAN architecture with attention-based network for Unpaired Single Image
-Dehazing. Official Pytorch based implementation.
+Attention-based Single Image Dehazing Using Improved CycleGAN, IJCNN 2022. Official Pytorch based implementation.
 
 
 
