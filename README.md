@@ -101,7 +101,7 @@ python main.py --eval
 
 the dehazed image will be saved at `output`
 
-## Sample
+## Samples
 
 ![App Screenshot](samples/fig1.png)
 ![App Screenshot](samples/fig2.png)
