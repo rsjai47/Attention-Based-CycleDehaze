@@ -5,7 +5,7 @@ Attention-based Single Image Dehazing Using Improved CycleGAN, IJCN IEEE WCCI 20
 ## Model Architecture
 
 ![App Screenshot](samples/mymodel_cycle.png)
-![App Screenshot](samples/mymodel_generator.jpg)
+![App Screenshot](samples/mymodel_generator.png)
 
 ## Dependencies
 
